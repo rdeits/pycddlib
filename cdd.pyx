@@ -655,6 +655,39 @@ cdef class Matrix(NumberTypeable):
             _raise_error(error, "failed to canonicalize matrix")
         return result
 
+    def _block_elimination(self, pydelset):
+        cdef dd_colset delset 
+        set_initialize(&delset, self.col_size)
+        for i in pydelset:
+            set_addelem(delset, i + 1)
+        cdef dd_ErrorType error = dd_NoError
+        cdef dd_MatrixPtr M1
+        M1 = dd_BlockElimination(self.dd_mat, delset, &error)
+        result = _make_dd_matrix(M1)
+        if error != dd_NoError:
+            _raise_error(error, "failed to perform block elimination")
+        return result
+
+    def _f_block_elimination(self, pydelset):
+        cdef ddf_colset delset 
+        set_initialize(&delset, self.col_size)
+        for i in pydelset:
+            set_addelem(delset, i + 1)
+        cdef dd_ErrorType error = dd_NoError
+        cdef ddf_MatrixPtr M1
+        M1 = ddf_BlockElimination(self.ddf_mat, delset, <ddf_ErrorType *>(&error))
+        result = _make_ddf_matrix(M1)
+        if error != dd_NoError:
+            _raise_error(error, "failed to perform block elimination")
+        return result
+
+    def block_elimination(self, pydelset):
+        if self.dd_mat:
+            return self._block_elimination(pydelset)
+        else:
+            return self._f_block_elimination(pydelset)
+
+
 cdef class LinProg(NumberTypeable):
 
     cdef dd_LPPtr dd_lp
@@ -842,6 +875,13 @@ cdef class Polyhedron(NumberTypeable):
             return _make_dd_matrix(dd_CopyGenerators(self.dd_poly))
         else:
             return _make_ddf_matrix(ddf_CopyGenerators(self.ddf_poly))
+
+    def project(self, delset, canonicalize=False):
+        mat = self.get_inequalities()
+        mat_eliminated = mat.block_elimination(delset)
+        if canonicalize:
+            mat_eliminated.canonicalize()
+        return Polyhedron(mat_eliminated)
 
 # module initialization code comes here
 # initialize module constants

@@ -377,3 +377,5 @@ cdef extern from "@cddhdr@" nogil:
     cdef void @dd@_FreeLPData(@dd@_LPPtr)
     cdef void @dd@_WriteLP(libc.stdio.FILE *f, @dd@_LPPtr lp)
     cdef void @dd@_WriteLPResult(libc.stdio.FILE *f, @dd@_LPPtr lp, @dd@_ErrorType err)
+
+    cdef @dd@_MatrixPtr @dd@_BlockElimination(@dd@_MatrixPtr, @dd@_colset, @dd@_ErrorType *)
